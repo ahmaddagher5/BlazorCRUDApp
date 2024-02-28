@@ -1,0 +1,19 @@
+﻿<MudDialog>
+    <DialogContent>
+        <EditForm Model="@model">
+            <MudHidden @bind-Value="model.Id" For="() => model.Id" />
+            <MudTextField Label="Country Name" @bind-Value="model.Name" For="() => model.Name" />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="MudBlazor.Color.Success" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [Parameter]
+    public Country model { get; set; } = new Country();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    void Submit() => MudDialog.Close(DialogResult.Ok<Country>(model));
+    void Cancel() => MudDialog.Cancel();
+}

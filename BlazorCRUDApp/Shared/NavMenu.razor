@@ -1,0 +1,15 @@
+﻿<MudDrawer @bind-Open="SideBarOpen" Elevation="1">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h5" Color="Color.Primary">BlazorCRUDApp</MudText>
+    </MudDrawerHeader>
+    <MudNavMenu>
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+        <MudNavLink Href="/classes" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Book">Classes</MudNavLink>
+        <MudNavLink Href="/students" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">Students</MudNavLink>
+        <MudNavLink Href="/countries" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.SouthAmerica">Countries</MudNavLink>
+    </MudNavMenu>
+</MudDrawer>
+@code {
+    [Parameter]
+    public bool SideBarOpen { get; set; }
+}

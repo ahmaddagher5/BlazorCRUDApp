@@ -1,0 +1,103 @@
+﻿@page "/countries"
+@using BlazorCRUDApp.Dialogs
+@using CurrieTechnologies.Razor.SweetAlert2
+
+
+@inject CountryServices service
+@inject IDialogService dialogService
+@inject SweetAlertService Swal
+
+<PageTitle>Countries</PageTitle>
+<MudText Typo="Typo.h3" GutterBottom="true">Countries</MudText>
+<MudPaper Elevation="2">
+    <MudForm>
+        <MudGrid Spacing="1" Class="mt-10 mb-2 pa-6">
+            <MudItem xs="7">
+                <MudTextField T="string" Label="Country Name" @bind-Value="@searchCountryName" />
+            </MudItem>
+            <MudItem xs="5" Class="pt-5">
+                <MudButton Variant="Variant.Filled" Color="Color.Info" DisableElevation="true" OnClick="RefreshCountries" StartIcon="@Icons.Material.Filled.Search">Search</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" DisableElevation="true" Class="mx-2" StartIcon="@Icons.Material.Filled.Add" OnClick="ShowAddCountry">Add New</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+<MudTable Items="@countries" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Country Id</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Created At</MudTh>
+        <MudTh>Modified At</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Country Id">@context.Id</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Created At">@context.CreatedDate.ToString("yyyy-MM-dd")</MudTd>
+        <MudTd DataLabel="Modified At">@(context.ModifiedDate.HasValue ? context.ModifiedDate.Value.ToString("yyyy-MM-dd") : "")</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton Title="Edit" Icon="@Icons.Material.Filled.Edit" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Medium" OnClick="@((e)=>ShowEditCountry(context))" />
+            <MudIconButton Title="Delete" Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" Size="Size.Medium" OnClick="@((e)=>ShowDeleteCountry(context))" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>  
+@code {
+    private bool _loading;
+    string searchCountryName = "";
+    private async Task ShowAddCountry()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", new Country());
+        var dialog = await dialogService.ShowAsync<CountryDialog>("Add New Country", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.AddCountryAsync((Country)result.Data);
+            await Swal.FireAsync("Well done!", "Country has been added", SweetAlertIcon.Success);
+            await RefreshCountries();
+        }
+    }
+    private async Task ShowEditCountry(Country country)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", country);
+        var dialog = await dialogService.ShowAsync<CountryDialog>("Update Country", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.UpdateCountryAsync((Country)result.Data);
+            await Swal.FireAsync("Well done!", "Country has been updated", SweetAlertIcon.Success);
+
+            await RefreshCountries();
+        }
+    }
+    private async Task ShowDeleteCountry(Country country)
+    {
+        var dialog = await dialogService.ShowAsync<DeleteDialog>("Delete Country");
+        
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.DeleteCountryAsync(country);
+            await Swal.FireAsync("Well done!", "Country has been deleted", SweetAlertIcon.Success);
+            await RefreshCountries();
+        }
+    }
+    
+
+    List<Country> countries = new List<Country>();
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshCountries();
+    }
+
+    private async Task RefreshCountries()
+    {
+        _loading = true;
+        countries = await service.GetCountriesAsync(searchCountryName);
+        _loading = false;
+    }
+}

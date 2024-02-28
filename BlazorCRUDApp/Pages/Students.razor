@@ -1,0 +1,149 @@
+﻿@page "/students"
+@using BlazorCRUDApp.Dialogs
+@using CurrieTechnologies.Razor.SweetAlert2
+
+
+@inject StudentServices service
+@inject ClassServices classService
+@inject CountryServices countryService
+@inject IDialogService dialogService
+@inject SweetAlertService Swal
+
+<PageTitle>Students</PageTitle>
+<MudText Typo="Typo.h3" GutterBottom="true">Students</MudText>
+<MudPaper Elevation="2">
+    <MudForm>
+            <MudGrid Spacing="1" Class="mt-10 mb-2 pa-6">
+            <MudItem sm="6">
+                <MudTextField T="string" Label="Student Name" @bind-Value="@searchStudentName" />
+            </MudItem>
+            <MudItem sm="6">
+                <MudSelect @bind-Value="searchStudentClass" Label="Class">
+                    <MudSelectItem Value="@(0)">All Classes</MudSelectItem>
+                    @foreach (var _class in classes)
+                    {
+                        <MudSelectItem Value="_class.Id">@_class.ClassName</MudSelectItem>
+                    }
+                </MudSelect>
+            
+            </MudItem>
+            <MudItem sm="6">
+                <MudSelect @bind-Value="searchStudentCountry" Label="Country">
+                    <MudSelectItem Value="@(0)">All Countries</MudSelectItem>
+                    @foreach (var country in countries)
+                    {
+                        <MudSelectItem Value="country.Id">@country.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem sm="6" Class="pt-5">
+                <MudButton Variant="Variant.Filled" Color="Color.Info" DisableElevation="true" OnClick="RefreshStudents" StartIcon="@Icons.Material.Filled.Search">Search</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" DisableElevation="true" Student="mx-2" StartIcon="@Icons.Material.Filled.Add" OnClick="ShowAddStudent">Add New</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+<MudTable Items="@students" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Student Id</MudTh>
+        <MudTh>Student Name</MudTh>
+        <MudTh>Date Of Birth</MudTh>
+        <MudTh>Class</MudTh>
+        <MudTh>Country</MudTh>
+        <MudTh>Created At</MudTh>
+        <MudTh>Modified At</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Student Id">@context.Id</MudTd>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Date Of Birth">@(context.DateOfBirth.HasValue ? context.DateOfBirth.Value.ToString("yyyy-MM-dd") : "")</MudTd>
+            <MudTd DataLabel="Class">@context.GetClassName()</MudTd>
+            <MudTd DataLabel="Country">@context.GetCountryName()</MudTd>
+            <MudTd DataLabel="Created At">@context.CreatedDate.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="Modified At">@(context.ModifiedDate.HasValue ? context.ModifiedDate.Value.ToString("yyyy-MM-dd") : "")</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Title="Edit" Icon="@Icons.Material.Filled.Edit" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Medium" OnClick="@((e)=>ShowEditStudent(context))" />
+                <MudIconButton Title="Delete" Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" Size="Size.Medium" OnClick="@((e)=>ShowDeleteStudent(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    @code {
+    private bool _loading;
+    string searchStudentName = "";
+    int searchStudentClass = 0;
+    int searchStudentCountry = 0;
+    List<Class> classes = new List<Class>();
+    List<Country> countries = new List<Country>();
+    private async Task ShowAddStudent()
+    {
+        var student = new Student();
+        var parameters = new DialogParameters();
+        parameters.Add("model", student);
+        parameters.Add("countries", countries);
+        parameters.Add("classes", classes);
+        var dialog = await dialogService.ShowAsync<StudentDialog>("Add New Student", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.AddStudentAsync((Student)result.Data);
+            await Swal.FireAsync("Well done!", "Student has been added", SweetAlertIcon.Success);
+            await RefreshStudents();
+        }
+    }
+    private async Task ShowEditStudent(Student _student)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", _student);
+        parameters.Add("countries", countries);
+        parameters.Add("classes", classes);
+        var dialog = await dialogService.ShowAsync<StudentDialog>("Update Student", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.UpdateStudentAsync((Student)result.Data);
+            await Swal.FireAsync("Well done!", "Student has been updated", SweetAlertIcon.Success);
+
+            await RefreshStudents();
+        }
+    }
+    private async Task ShowDeleteStudent(Student _student)
+    {
+        var dialog = await dialogService.ShowAsync<DeleteDialog>("Delete Student");
+
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.DeleteStudentAsync(_student);
+            await Swal.FireAsync("Well done!", "Student has been deleted", SweetAlertIcon.Success);
+            await RefreshStudents();
+        }
+    }
+
+
+    List<Student> students = new List<Student>();
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshStudents();
+        await RefreshClasses();
+        await RefreshCountries();
+    }
+
+    private async Task RefreshStudents()
+    {
+        _loading = true;
+        students = await service.GetStudentsAsync(searchStudentName, searchStudentClass, searchStudentCountry);
+        _loading = false;
+    }
+    private async Task RefreshClasses()
+    {
+        classes = await classService.GetClassesAsync();
+    }
+    private async Task RefreshCountries()
+    {
+        countries = await countryService.GetCountriesAsync();
+    }
+}

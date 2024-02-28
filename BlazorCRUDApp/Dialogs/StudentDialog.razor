@@ -1,0 +1,38 @@
+﻿<MudDialog>
+    <DialogContent>
+        <EditForm Model="@model">
+            <MudHidden @bind-Value="model.Id" For="() => model.Id" />
+            <MudTextField Label="Student Name" @bind-Value="model.Name" For="() => model.Name" />
+            <MudDatePicker Label="Date Of Birth Label" @bind-Date="model.DateOfBirth" />
+             <MudSelect @bind-Value="model.ClassId" Label="Class" >
+                <MudSelectItem T="int" Value="@(0)">Please Select Class</MudSelectItem>
+                @foreach (var _class in classes)
+                {
+                    <MudSelectItem Value="_class.Id">@_class.ClassName</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect @bind-Value="model.CountryId" Label="Country">
+                <MudSelectItem T="int" Value="@(0)">Please Select Country</MudSelectItem>
+                @foreach (var country in countries)
+                {
+                    <MudSelectItem Value="country.Id">@country.Name</MudSelectItem>
+                }
+            </MudSelect> 
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="MudBlazor.Color.Success" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [Parameter]
+    public Student model { get; set; } = new Student();
+    [Parameter]
+    public List<Country> countries { get; set; } = new List<Country>();
+    [Parameter]
+    public List<Class> classes { get; set; } = new List<Class>();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    void Submit() => MudDialog.Close(DialogResult.Ok<Student>(model));
+    void Cancel() => MudDialog.Cancel();
+}

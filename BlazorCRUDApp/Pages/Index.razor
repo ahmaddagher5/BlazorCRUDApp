@@ -1,0 +1,67 @@
+﻿@page "/"
+@using ApexCharts
+@inject StudentServices service
+<PageTitle>Dashboard</PageTitle>
+<MudText Typo="Typo.h3" GutterBottom="true">Dashboard</MudText>
+<MudContainer Class="mt-16 px-8" MaxWidth="MaxWidth.False">
+    <MudGrid>
+        
+        
+        <MudItem xs="12" sm="6">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 100%">
+                <ApexChart Title="Count of students per class" TItem="ChartObj">
+                    <ApexPointSeries TItem="ChartObj"
+                                     Items="StudentsPerClass"
+                                     Name="No. of Students"
+                                     SeriesType="SeriesType.Bar"
+                                     XValue="e => e.Key"
+                                     YValue="e=> e.Value" />
+                </ApexChart>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudPaper Elevation="2" Class="pa-4" Style="height: 100%">
+                <ApexChart Title="Count of students per country" TItem="ChartObj">
+                    <ApexPointSeries TItem="ChartObj"
+                                     Items="StudentsPerCountry"
+                                     Name="No. of Students"
+                                     SeriesType="SeriesType.Pie"
+                                     XValue="e => e.Key"
+                                     YValue="e=> e.Value" />
+                </ApexChart>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="12">
+            <MudCard Elevation="1" Class="pa-4">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudAvatar Color="MudBlazor.Color.Secondary">
+                            <MudIcon Icon="@Icons.Material.Filled.BarChart" />
+                        </MudAvatar>
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb1">Average age of students</MudText>
+                        <MudText Typo="Typo.h5">@avg_age</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                </MudCard>
+            </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code{
+    int avg_age = 0;
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboard();
+    }
+    private async Task LoadDashboard()
+    {
+        avg_age = await service.GetStudentsAverageAgeAsync();
+        StudentsPerClass = await service.GetStudentsPerClass();
+        StudentsPerCountry = await service.GetStudentsCountry();
+    }
+    private List<ChartObj> StudentsPerClass { get; set; } = new();
+    private List<ChartObj> StudentsPerCountry { get; set; } = new();
+
+}

@@ -1,0 +1,104 @@
+﻿@page "/classes"
+@using BlazorCRUDApp.Dialogs
+@using CurrieTechnologies.Razor.SweetAlert2
+
+
+@inject ClassServices service
+@inject IDialogService dialogService
+@inject SweetAlertService Swal
+
+<PageTitle>Classes</PageTitle>
+<MudText Typo="Typo.h3" GutterBottom="true">Classes</MudText>
+<MudPaper Elevation="2">
+    <MudForm>
+        <MudGrid Spacing="1" Class="mt-10 mb-2 pa-6">
+            <MudItem xs="7">
+                <MudTextField T="string" Label="Class Name" @bind-Value="@searchClassName" />
+            </MudItem>
+            <MudItem xs="5" Class="pt-5">
+                <MudButton Variant="Variant.Filled" Color="Color.Info" DisableElevation="true" OnClick="RefreshClasses" StartIcon="@Icons.Material.Filled.Search">Search</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" DisableElevation="true" Class="mx-2" StartIcon="@Icons.Material.Filled.Add" OnClick="ShowAddClass">Add New</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+
+<MudTable Items="@classes" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+    <HeaderContent>
+        <MudTh>Class Id</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Created At</MudTh>
+        <MudTh>Modified At</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Class Id">@context.Id</MudTd>
+            <MudTd DataLabel="Name">@context.ClassName</MudTd>
+            <MudTd DataLabel="Created At">@context.CreatedDate.ToString("yyyy-MM-dd")</MudTd>
+            <MudTd DataLabel="Modified At">@(context.ModifiedDate.HasValue ? context.ModifiedDate.Value.ToString("yyyy-MM-dd") : "")</MudTd>
+            <MudTd DataLabel="Actions">
+                <MudIconButton Title="Edit" Icon="@Icons.Material.Filled.Edit" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Medium" OnClick="@((e)=>ShowEditClass(context))" />
+                <MudIconButton Title="Delete" Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" Size="Size.Medium" OnClick="@((e)=>ShowDeleteClass(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+    @code {
+    private bool _loading;
+    string searchClassName = "";
+    private async Task ShowAddClass()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", new Class());
+        var dialog = await dialogService.ShowAsync<ClassDialog>("Add New Class", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.AddClassAsync((Class)result.Data);
+            await Swal.FireAsync("Well done!", "Class has been added", SweetAlertIcon.Success);
+            await RefreshClasses();
+        }
+    }
+    private async Task ShowEditClass(Class _class)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("model", _class);
+        var dialog = await dialogService.ShowAsync<ClassDialog>("Update Class", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.UpdateClassAsync((Class)result.Data);
+            await Swal.FireAsync("Well done!", "Class has been updated", SweetAlertIcon.Success);
+
+            await RefreshClasses();
+        }
+    }
+    private async Task ShowDeleteClass(Class _class)
+    {
+        var dialog = await dialogService.ShowAsync<DeleteDialog>("Delete Class");
+
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await service.DeleteClassAsync(_class);
+            await Swal.FireAsync("Well done!", "Class has been deleted", SweetAlertIcon.Success);
+            await RefreshClasses();
+        }
+    }
+
+
+    List<Class> classes = new List<Class>();
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshClasses();
+    }
+
+    private async Task RefreshClasses()
+    {
+        _loading = true;
+        classes = await service.GetClassesAsync(searchClassName);
+        _loading = false;
+    }
+}

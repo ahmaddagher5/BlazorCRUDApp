@@ -1,0 +1,19 @@
+﻿<MudDialog>
+    <DialogContent>
+        <EditForm Model="@model">
+            <MudHidden @bind-Value="model.Id" For="() => model.Id" />
+            <MudTextField Label="Class Name" @bind-Value="model.ClassName" For="() => model.ClassName" />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="MudBlazor.Color.Success" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [Parameter]
+    public Class model { get; set; } = new Class();
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    void Submit() => MudDialog.Close(DialogResult.Ok<Class>(model));
+    void Cancel() => MudDialog.Cancel();
+}
